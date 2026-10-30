@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Nexus 3D · Experiências Web Imersivas & IA</title>
+  
+  <!-- Fontes Google -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Space Grotesk', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              bg: '#08080a',
+              card: '#111216',
+              border: 'rgba(255, 255, 255, 0.08)',
+              orange: '#ff6a00',
+              cyan: '#00f0ff',
+              text: '#f4f4f5',
+              muted: '#9ca3af'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Three.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    body {
+      background-color: #08080a;
+      color: #f4f4f5;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* Grid Blueprint sutil de fundo */
+    .bg-grid {
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 50px 50px;
+    }
+
+    /* Brilho radial ambiente */
+    .ambient-glow {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 106, 0, 0.12) 0%, rgba(0, 240, 255, 0.03) 50%, transparent 70%);
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Glassmorphism de alto padrão */
+    .glass-card {
+      background: rgba(17, 18, 22, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-card:hover {
+      border-color: rgba(255, 106, 0, 0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 106, 0, 0.1);
+    }
+
+    /* Estilo do canvas 3D */
+    #canvas3d-container {
+      position: relative;
+      width: 100%;
+      height: 480px;
+      cursor: grab;
+    }
+    #canvas3d-container:active {
+      cursor: grabbing;
+    }
+  </style>
+</head>
+<body class="bg-grid relative selection:bg-brand-orange selection:text-black">
+
+  <!-- Glows de Iluminação de Estúdio -->
+  <div class="ambient-glow -top-40 -right-40"></div>
+  <div class="ambient-glow top-[40%] -left-60"></div>
+
+  <!-- =========================================================================
+       1. HEADER / NAVBAR
+       ========================================================================= -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#08080a]/80 backdrop-blur-lg border-b border-white/5">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-orange to-amber-600 flex items-center justify-center font-mono font-bold text-black text-sm shadow-lg shadow-brand-orange/30">
+          ▲
+        </div>
+        <span class="font-bold text-lg tracking-tight text-white font-sans">
+          NEXUS<span class="text-brand-orange">.3D</span>
+        </span>
+      </div>
+
+      <div class="hidden md:flex items-center gap-8 text-xs font-mono uppercase tracking-wider text-brand-muted">
+        <a href="#experiencia" class="hover:text-brand-orange transition-colors">3D Interativo</a>
+        <a href="#pilares" class="hover:text-brand-orange transition-colors">Engenharia</a>
+        <a href="#geo" class="hover:text-brand-orange transition-colors">Blindagem GEO</a>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <a href="#contato" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-full font-mono text-xs font-semibold tracking-wide transition-all active:scale-95">
+          Orçamento
+        </a>
+      </div>
+
+    </div>
+  </nav>
+
+  <!-- =========================================================================
+       2. HERO SECTION COM O OBJETO 3D INTERATIVO
+       ========================================================================= -->
+  <section id="experiencia" class="relative pt-32 pb-20 md:pt-40 md:pb-32 px-6 max-w-6xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      
+      <!-- Coluna da Esquerda: Copywriting de Alto Impacto -->
+      <div class="lg:col-span-7 z-10 text-left">
+        
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-orange/10 border border-brand-orange/30 text-brand-orange text-xs font-mono tracking-wider mb-6">
+          <span class="w-2 h-2 rounded-full bg-brand-orange animate-pulse"></span>
+          NOVA GERAÇÃO DE SITES COGNITIVOS
+        </div>
+
+        <h1 class="text-4xl sm:text-6xl font-bold tracking-tight text-white leading-[1.08] mb-6">
+          Sites que convertem porque <span class="bg-gradient-to-r from-brand-orange via-amber-400 to-brand-cyan bg-clip-text text-transparent">hipnotizam.</span>
+        </h1>
+
+        <p class="text-base sm:text-lg text-brand-muted font-normal leading-relaxed mb-8 max-w-xl">
+          Nós criamos experiências digitais exclusivas em <strong class="text-white">3D interativo</strong> com taxa de carregamento sub-segundo e <strong class="text-white">Blindagem GEO</strong> nativa para sua empresa ser recomendada pelo ChatGPT e Perplexity.
+        </p>
+
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+          <a href="#contato" class="px-8 py-4 bg-brand-orange hover:bg-orange-500 active:scale-95 text-black font-bold text-sm rounded-xl text-center shadow-xl shadow-brand-orange/25 transition-all flex items-center justify-center gap-2 cursor-pointer">
+            <span>Iniciar Projeto Exclusivo</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </a>
+
+          <div class="px-5 py-3.5 bg-white/5 border border-white/10 rounded-xl text-xs font-mono text-zinc-300 flex items-center gap-3">
+            <span class="text-emerald-400 font-bold">✓ 60 FPS</span>
+            <span class="text-zinc-600">|</span>
+            <span>Mobile-First iOS</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Coluna da Direita: Canvas 3D Interativo WebGL -->
+      <div class="lg:col-span-5 relative flex flex-col items-center">
+        
+        <!-- Dica interativa -->
+        <div class="absolute top-2 right-4 z-20 pointer-events-none font-mono text-[11px] text-brand-muted flex items-center gap-1.5 bg-black/60 px-2.5 py-1 rounded-full border border-white/10">
+          <span>Arraste com o dedo/mouse</span>
+          <span class="text-brand-orange">↺</span>
+        </div>
+
+        <div id="canvas3d-container" class="rounded-2xl border border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent shadow-2xl">
+          <!-- O Three.js vai injetar o canvas aqui -->
+        </div>
+
+        <!-- Métricas flutuantes abaixo do 3D -->
+        <div class="w-full grid grid-cols-3 gap-2 mt-4 font-mono text-center">
+          <div class="p-2.5 glass-card rounded-xl">
+            <div class="text-xs text-brand-muted">Carregamento</div>
+            <div class="text-sm font-bold text-emerald-400">0.4s</div>
+          </div>
+          <div class="p-2.5 glass-card rounded-xl">
+            <div class="text-xs text-brand-muted">GPU Load</div>
+            <div class="text-sm font-bold text-cyan-400">&lt; 8%</div>
+          </div>
+          <div class="p-2.5 glass-card rounded-xl">
+            <div class="text-xs text-brand-muted">Score GEO</div>
+            <div class="text-sm font-bold text-brand-orange">94/100</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       3. FAIXA DE CONTRASTE (POR QUE SITES COMUNS FALHAM)
+       ========================================================================= -->
+  <section class="border-y border-white/5 bg-[#0b0c10]/60 py-10 px-6">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+      <div>
+        <h3 class="text-lg font-bold text-white mb-1">Templates de WordPress e páginas estáticas morreram.</h3>
+        <p class="text-xs text-brand-muted font-mono">Em 2026, seu cliente toma a decisão de compra em menos de 3 segundos.</p>
+      </div>
+      <div class="flex items-center gap-6 font-mono text-xs">
+        <div><span class="text-brand-orange font-bold text-xl">3.8x</span> mais tempo na página</div>
+        <div class="w-px h-8 bg-white/10"></div>
+        <div><span class="text-emerald-400 font-bold text-xl">+74%</span> na taxa de conversão</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       4. OS 3 PILARES DO PRODUTO (ARQUITETURA DE VALOR)
+       ========================================================================= -->
+  <section id="pilares" class="py-24 px-6 max-w-6xl mx-auto">
+    <div class="text-center max-w-2xl mx-auto mb-16">
+      <div class="text-brand-orange text-xs font-mono tracking-widest uppercase mb-2">// ARQUITETURA DO PRODUTO</div>
+      <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">O padrão que agências tradicionais não conseguem replicar.</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      
+      <!-- Card 1 -->
+      <div class="glass-card p-8 rounded-2xl relative overflow-hidden">
+        <div class="w-12 h-12 rounded-xl bg-brand-orange/15 border border-brand-orange/40 text-brand-orange flex items-center justify-center font-mono font-bold text-lg mb-6 shadow-inner">
+          01
+        </div>
+        <h3 class="text-xl font-bold text-white mb-3">Modelagem 3D & WebGL Leve</h3>
+        <p class="text-sm text-brand-muted leading-relaxed font-sans mb-4">
+          Cenas e objetos tridimensionais que reagem ao mouse e ao toque do celular sem drenar a bateria e sem travamentos.
+        </p>
+        <ul class="text-xs font-mono text-zinc-400 space-y-2 border-t border-white/5 pt-4">
+          <li class="flex items-center gap-2"><span class="text-brand-orange">▸</span> Shaders otimizados para GPU</li>
+          <li class="flex items-center gap-2"><span class="text-brand-orange">▸</span> Renderização nativa a 60 FPS</li>
+        </ul>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="glass-card p-8 rounded-2xl relative overflow-hidden border-brand-orange/30 bg-gradient-to-b from-brand-orange/[0.04] to-transparent">
+        <div class="w-12 h-12 rounded-xl bg-brand-orange text-black flex items-center justify-center font-mono font-bold text-lg mb-6 shadow-lg shadow-brand-orange/30">
+          02
+        </div>
+        <h3 class="text-xl font-bold text-white mb-3">Blindagem GEO Nativa</h3>
+        <p class="text-sm text-brand-muted leading-relaxed font-sans mb-4">
+          Seu site não compete apenas no Google. Ele já nasce estruturado para o ChatGPT, Perplexity e Gemini citarem sua empresa como recomendação.
+        </p>
+        <ul class="text-xs font-mono text-zinc-400 space-y-2 border-t border-white/5 pt-4">
+          <li class="flex items-center gap-2"><span class="text-brand-orange">▸</span> Arquivos llms.txt e /ai/summary</li>
+          <li class="flex items-center gap-2"><span class="text-brand-orange">▸</span> Schemas JSON-LD completos</li>
+        </ul>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="glass-card p-8 rounded-2xl relative overflow-hidden">
+        <div class="w-12 h-12 rounded-xl bg-brand-cyan/15 border border-brand-cyan/40 text-brand-cyan flex items-center justify-center font-mono font-bold text-lg mb-6 shadow-inner">
+          03
+        </div>
+        <h3 class="text-xl font-bold text-white mb-3">Engenharia Sob Medida</h3>
+        <p class="text-sm text-brand-muted leading-relaxed font-sans mb-4">
+          Sem plugins pesados, sem templates vazados. Código limpo em Next.js / Tailwind hospedado em infraestrutura de nuvem moderna.
+        </p>
+        <ul class="text-xs font-mono text-zinc-400 space-y-2 border-t border-white/5 pt-4">
+          <li class="flex items-center gap-2"><span class="text-brand-cyan">▸</span> Score 98+ no Google PageSpeed</li>
+          <li class="flex items-center gap-2"><span class="text-brand-cyan">▸</span> PWA instalável no iPhone e Android</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       5. CTA FINAL & CONTATO
+       ========================================================================= -->
+  <section id="contato" class="py-24 px-6 max-w-4xl mx-auto text-center">
+    <div class="glass-card p-10 sm:p-16 rounded-3xl relative overflow-hidden border border-brand-orange/40 shadow-2xl">
+      
+      <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-orange via-amber-400 to-brand-cyan"></div>
+
+      <div class="font-mono text-xs text-brand-orange font-bold uppercase tracking-widest mb-3">
+        DISPONIBILIDADE: 2 PROJETOS NESTE CICLO
+      </div>
+
+      <h2 class="text-3xl sm:text-5xl font-bold text-white tracking-tight mb-6">
+        Pronto para posicionar sua marca no topo?
+      </h2>
+
+      <p class="text-base text-brand-muted max-w-lg mx-auto mb-8 font-normal leading-relaxed">
+        Construímos sua landing page em 3D de alta performance entregue em 15 dias com garantia técnica e blindagem de IA inclusa.
+      </p>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="https://wa.me/5551989871325" target="_blank" class="w-full sm:w-auto px-8 py-4 bg-brand-orange hover:bg-orange-500 active:scale-95 text-black font-bold text-sm rounded-xl shadow-xl shadow-brand-orange/30 transition-all flex items-center justify-center gap-2 cursor-pointer">
+          <span>Solicitar Proposta Comercial</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.96.523 1.905.817 2.801.817 3.181 0 5.768-2.586 5.768-5.766.001-3.18-2.586-5.767-5.773-5.767zm0 10.372c-.815 0-1.611-.22-2.311-.64l-.165-.098-1.579.414.421-1.539-.107-.171c-.461-.734-.705-1.587-.704-2.458.001-2.484 2.022-4.505 4.507-4.505 2.484 0 4.505 2.021 4.505 4.505 0 2.485-2.021 4.507-4.507 4.507z"/>
+          </svg>
+        </a>
+      </div>
+
+      <div class="mt-8 text-xs font-mono text-zinc-500">
+        Desenvolvido por Rian Fernandes · Software & Inteligência Artificial
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-white/5 py-8 text-center text-xs font-mono text-zinc-500">
+    © 2026 Nexus 3D · Operação sob CNPJ Próprio · rian@rianfernandes.com.br
+  </footer>
+
+  <!-- =========================================================================
+       MOTOR THREE.JS INTERATIVO (3D CANVAS NATIVO)
+       ========================================================================= -->
+  <script>
+    (() => {
+      const container = document.getElementById('canvas3d-container');
+      if (!container) return;
+
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      // 1. Scene, Camera, Renderer
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      camera.position.z = 6;
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+
+      // 2. Luzes de Estúdio Refinadas (Alto Contraste & Rim Light)
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      scene.add(ambientLight);
+
+      const orangeLight = new THREE.PointLight(0xff6a00, 5, 25);
+      orangeLight.position.set(4, 4, 4);
+      scene.add(orangeLight);
+
+      const cyanLight = new THREE.PointLight(0x00f0ff, 4, 25);
+      cyanLight.position.set(-4, -3, 3);
+      scene.add(cyanLight);
+
+      // Rim light traseiro para realçar quinas e volume do 3D
+      const rimLight = new THREE.DirectionalLight(0xffaa44, 2.5);
+      rimLight.position.set(0, 5, -3);
+      scene.add(rimLight);
+
+      // 3. Objeto 3D Central: Icosaedro Futurista com Gaiola Wireframe
+      const group = new THREE.Group();
+
+      // Núcleo Sólido Facetado com Material Nobre (Obsidiana / Cristal Titânio)
+      const coreGeo = new THREE.IcosahedronGeometry(1.6, 0);
+      const coreMat = new THREE.MeshPhysicalMaterial({
+        color: 0x222634,
+        emissive: 0x2a1405,
+        emissiveIntensity: 0.8,
+        roughness: 0.12,
+        metalness: 0.88,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.08,
+        reflectivity: 0.9,
+        flatShading: true
+      });
+      const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+      group.add(coreMesh);
+
+      // Gaiola Wireframe Externa Neon Vibrante
+      const wireGeo = new THREE.IcosahedronGeometry(1.72, 1);
+      const wireMat = new THREE.MeshBasicMaterial({
+        color: 0xff7b1a,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.55
+      });
+      const wireMesh = new THREE.Mesh(wireGeo, wireMat);
+      group.add(wireMesh);
+
+      // Aneis Orbitais de Dados
+      const ringGeo = new THREE.TorusGeometry(2.3, 0.02, 16, 100);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0x00f0ff,
+        transparent: true,
+        opacity: 0.6
+      });
+      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+      ringMesh.rotation.x = Math.PI / 3;
+      ringMesh.rotation.y = Math.PI / 6;
+      group.add(ringMesh);
+
+      // Partículas em Órbita
+      const particleGeo = new THREE.BufferGeometry();
+      const count = 180;
+      const positions = new Float32Array(count * 3);
+      for (let i = 0; i < count * 3; i += 3) {
+        const radius = 2.4 + Math.random() * 1.5;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = (Math.random() - 0.5) * Math.PI;
+        positions[i] = radius * Math.cos(theta) * Math.cos(phi);
+        positions[i + 1] = radius * Math.sin(phi);
+        positions[i + 2] = radius * Math.sin(theta) * Math.cos(phi);
+      }
+      particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const particleMat = new THREE.PointsMaterial({
+        color: 0xffaa00,
+        size: 0.04,
+        transparent: true,
+        opacity: 0.7
+      });
+      const particles = new THREE.Points(particleGeo, particleMat);
+      group.add(particles);
+
+      scene.add(group);
+
+      // 4. Interatividade: Rastreamento do Mouse e Toque no Mobile
+      let mouseX = 0, mouseY = 0;
+      let targetX = 0, targetY = 0;
+      let isDragging = false;
+      let prevPointerX = 0, prevPointerY = 0;
+
+      const onPointerMove = (e) => {
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        if (isDragging) {
+          const deltaX = clientX - prevPointerX;
+          const deltaY = clientY - prevPointerY;
+          group.rotation.y += deltaX * 0.008;
+          group.rotation.x += deltaY * 0.008;
+          prevPointerX = clientX;
+          prevPointerY = clientY;
+        } else {
+          const rect = container.getBoundingClientRect();
+          mouseX = ((clientX - rect.left) / rect.width) * 2 - 1;
+          mouseY = -(((clientY - rect.top) / rect.height) * 2 - 1);
+        }
+      };
+
+      const onPointerDown = (e) => {
+        isDragging = true;
+        prevPointerX = e.touches ? e.touches[0].clientX : e.clientX;
+        prevPointerY = e.touches ? e.touches[0].clientY : e.clientY;
+      };
+
+      const onPointerUp = () => { isDragging = false; };
+
+      container.addEventListener('mousemove', onPointerMove);
+      container.addEventListener('mousedown', onPointerDown);
+      window.addEventListener('mouseup', onPointerUp);
+
+      container.addEventListener('touchmove', onPointerMove, { passive: true });
+      container.addEventListener('touchstart', onPointerDown, { passive: true });
+      window.addEventListener('touchend', onPointerUp);
+
+      // Redimensionamento responsivo
+      window.addEventListener('resize', () => {
+        if (!container) return;
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+      });
+
+      // 5. Loop de Animação 60 FPS
+      let clock = new THREE.Clock();
+      const animate = () => {
+        requestAnimationFrame(animate);
+        const delta = clock.getDelta();
+
+        if (!isDragging) {
+          // Rotação suave contínua
+          group.rotation.y += 0.25 * delta;
+          group.rotation.x += 0.12 * delta;
+          ringMesh.rotation.z += 0.4 * delta;
+          particles.rotation.y -= 0.15 * delta;
+
+          // Parallax reativo ao mouse suave
+          targetX = mouseX * 0.4;
+          targetY = mouseY * 0.4;
+          group.position.x += (targetX - group.position.x) * 0.05;
+          group.position.y += (targetY - group.position.y) * 0.05;
+        }
+
+        renderer.render(scene, camera);
+      };
+
+      animate();
+    })();
+  </script>
+
+</body>
+</html>
