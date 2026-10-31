@@ -1,16 +1,14 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark scroll-smooth">
+<html lang="pt-BR" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Nexus 3D · Experiências Web Imersivas & IA</title>
+  <title>AURA Core · Scrollytelling 3D Padrão Apple</title>
   
-  <!-- Fontes Google -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -23,13 +21,11 @@
           },
           colors: {
             brand: {
-              bg: '#08080a',
-              card: '#111216',
-              border: 'rgba(255, 255, 255, 0.08)',
+              bg: '#000000',
               orange: '#ff6a00',
               cyan: '#00f0ff',
-              text: '#f4f4f5',
-              muted: '#9ca3af'
+              gold: '#ffd700',
+              muted: '#86868b'
             }
           }
         }
@@ -37,465 +33,448 @@
     }
   </script>
 
-  <!-- Three.js CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
   <style>
+    :root {
+      --sat: env(safe-area-inset-top, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+    }
     body {
-      background-color: #08080a;
-      color: #f4f4f5;
+      background-color: #000000;
+      color: #f5f5f7;
       overflow-x: hidden;
-      -webkit-tap-highlight-color: transparent;
+      -webkit-font-smoothing: antialiased;
     }
     
-    /* Grid Blueprint sutil de fundo */
-    .bg-grid {
-      background-image: 
-        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-      background-size: 50px 50px;
-    }
-
-    /* Brilho radial ambiente */
-    .ambient-glow {
-      position: absolute;
-      width: 600px;
-      height: 600px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(255, 106, 0, 0.12) 0%, rgba(0, 240, 255, 0.03) 50%, transparent 70%);
-      filter: blur(80px);
+    /* Canvas 3D fixado em tela cheia */
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 5;
       pointer-events: none;
-      z-index: 0;
     }
 
-    /* Glassmorphism de alto padrão */
-    .glass-card {
-      background: rgba(17, 18, 22, 0.7);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .glass-card:hover {
-      border-color: rgba(255, 106, 0, 0.3);
-      transform: translateY(-4px);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 106, 0, 0.1);
+    .scroll-progress-line {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #ff6a00, #00f0ff);
+      z-index: 100;
+      width: 0%;
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
     }
 
-    /* Estilo do canvas 3D */
-    #canvas3d-container {
+    /* Seções com altura proporcional para rolagem suave */
+    .story-section {
       position: relative;
-      width: 100%;
-      height: 480px;
-      cursor: grab;
+      min-height: 110vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 2rem 1.5rem;
+      z-index: 20;
+      pointer-events: none;
     }
-    #canvas3d-container:active {
-      cursor: grabbing;
+    .story-card {
+      pointer-events: auto;
+    }
+
+    .apple-gradient-text {
+      background: linear-gradient(180deg, #ffffff 30%, #a1a1a6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Blur glassmorphism */
+    .glass-panel {
+      background: rgba(10, 11, 14, 0.78);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 40px rgba(255, 106, 0, 0.05);
     }
   </style>
 </head>
-<body class="bg-grid relative selection:bg-brand-orange selection:text-black">
+<body class="selection:bg-brand-orange selection:text-black">
 
-  <!-- Glows de Iluminação de Estúdio -->
-  <div class="ambient-glow -top-40 -right-40"></div>
-  <div class="ambient-glow top-[40%] -left-60"></div>
+  <div id="scroll-progress" class="scroll-progress-line"></div>
 
-  <!-- =========================================================================
-       1. HEADER / NAVBAR
-       ========================================================================= -->
-  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#08080a]/80 backdrop-blur-lg border-b border-white/5">
-    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-      
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-orange to-amber-600 flex items-center justify-center font-mono font-bold text-black text-sm shadow-lg shadow-brand-orange/30">
-          ▲
-        </div>
-        <span class="font-bold text-lg tracking-tight text-white font-sans">
-          NEXUS<span class="text-brand-orange">.3D</span>
-        </span>
+  <!-- Header Fixo Estilo Apple -->
+  <header class="fixed top-0 left-0 right-0 z-50 bg-black/60 backdrop-blur-xl border-b border-white/10" style="padding-top: var(--sat);">
+    <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-brand-orange shadow-[0_0_10px_#ff6a00]"></span>
+        <span class="font-bold text-sm tracking-tight text-white font-sans">AURA <span class="text-brand-orange font-mono text-xs">CORE</span></span>
       </div>
-
-      <div class="hidden md:flex items-center gap-8 text-xs font-mono uppercase tracking-wider text-brand-muted">
-        <a href="#experiencia" class="hover:text-brand-orange transition-colors">3D Interativo</a>
-        <a href="#pilares" class="hover:text-brand-orange transition-colors">Engenharia</a>
-        <a href="#geo" class="hover:text-brand-orange transition-colors">Blindagem GEO</a>
+      <div class="font-mono text-xs text-brand-muted hidden sm:block">
+        SCROLLYTELLING · CINEMÁTICO 3D
       </div>
-
-      <div class="flex items-center gap-4">
-        <a href="#contato" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-full font-mono text-xs font-semibold tracking-wide transition-all active:scale-95">
-          Orçamento
-        </a>
-      </div>
-
-    </div>
-  </nav>
-
-  <!-- =========================================================================
-       2. HERO SECTION COM O OBJETO 3D INTERATIVO
-       ========================================================================= -->
-  <section id="experiencia" class="relative pt-32 pb-20 md:pt-40 md:pb-32 px-6 max-w-6xl mx-auto">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-      
-      <!-- Coluna da Esquerda: Copywriting de Alto Impacto -->
-      <div class="lg:col-span-7 z-10 text-left">
-        
-        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-orange/10 border border-brand-orange/30 text-brand-orange text-xs font-mono tracking-wider mb-6">
-          <span class="w-2 h-2 rounded-full bg-brand-orange animate-pulse"></span>
-          NOVA GERAÇÃO DE SITES COGNITIVOS
-        </div>
-
-        <h1 class="text-4xl sm:text-6xl font-bold tracking-tight text-white leading-[1.08] mb-6">
-          Sites que convertem porque <span class="bg-gradient-to-r from-brand-orange via-amber-400 to-brand-cyan bg-clip-text text-transparent">hipnotizam.</span>
-        </h1>
-
-        <p class="text-base sm:text-lg text-brand-muted font-normal leading-relaxed mb-8 max-w-xl">
-          Nós criamos experiências digitais exclusivas em <strong class="text-white">3D interativo</strong> com taxa de carregamento sub-segundo e <strong class="text-white">Blindagem GEO</strong> nativa para sua empresa ser recomendada pelo ChatGPT e Perplexity.
-        </p>
-
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-          <a href="#contato" class="px-8 py-4 bg-brand-orange hover:bg-orange-500 active:scale-95 text-black font-bold text-sm rounded-xl text-center shadow-xl shadow-brand-orange/25 transition-all flex items-center justify-center gap-2 cursor-pointer">
-            <span>Iniciar Projeto Exclusivo</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-          </a>
-
-          <div class="px-5 py-3.5 bg-white/5 border border-white/10 rounded-xl text-xs font-mono text-zinc-300 flex items-center gap-3">
-            <span class="text-emerald-400 font-bold">✓ 60 FPS</span>
-            <span class="text-zinc-600">|</span>
-            <span>Mobile-First iOS</span>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Coluna da Direita: Canvas 3D Interativo WebGL -->
-      <div class="lg:col-span-5 relative flex flex-col items-center">
-        
-        <!-- Dica interativa -->
-        <div class="absolute top-2 right-4 z-20 pointer-events-none font-mono text-[11px] text-brand-muted flex items-center gap-1.5 bg-black/60 px-2.5 py-1 rounded-full border border-white/10">
-          <span>Arraste com o dedo/mouse</span>
-          <span class="text-brand-orange">↺</span>
-        </div>
-
-        <div id="canvas3d-container" class="rounded-2xl border border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent shadow-2xl">
-          <!-- O Three.js vai injetar o canvas aqui -->
-        </div>
-
-        <!-- Métricas flutuantes abaixo do 3D -->
-        <div class="w-full grid grid-cols-3 gap-2 mt-4 font-mono text-center">
-          <div class="p-2.5 glass-card rounded-xl">
-            <div class="text-xs text-brand-muted">Carregamento</div>
-            <div class="text-sm font-bold text-emerald-400">0.4s</div>
-          </div>
-          <div class="p-2.5 glass-card rounded-xl">
-            <div class="text-xs text-brand-muted">GPU Load</div>
-            <div class="text-sm font-bold text-cyan-400">&lt; 8%</div>
-          </div>
-          <div class="p-2.5 glass-card rounded-xl">
-            <div class="text-xs text-brand-muted">Score GEO</div>
-            <div class="text-sm font-bold text-brand-orange">94/100</div>
-          </div>
-        </div>
-
-      </div>
-
-    </div>
-  </section>
-
-  <!-- =========================================================================
-       3. FAIXA DE CONTRASTE (POR QUE SITES COMUNS FALHAM)
-       ========================================================================= -->
-  <section class="border-y border-white/5 bg-[#0b0c10]/60 py-10 px-6">
-    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
       <div>
-        <h3 class="text-lg font-bold text-white mb-1">Templates de WordPress e páginas estáticas morreram.</h3>
-        <p class="text-xs text-brand-muted font-mono">Em 2026, seu cliente toma a decisão de compra em menos de 3 segundos.</p>
-      </div>
-      <div class="flex items-center gap-6 font-mono text-xs">
-        <div><span class="text-brand-orange font-bold text-xl">3.8x</span> mais tempo na página</div>
-        <div class="w-px h-8 bg-white/10"></div>
-        <div><span class="text-emerald-400 font-bold text-xl">+74%</span> na taxa de conversão</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- =========================================================================
-       4. OS 3 PILARES DO PRODUTO (ARQUITETURA DE VALOR)
-       ========================================================================= -->
-  <section id="pilares" class="py-24 px-6 max-w-6xl mx-auto">
-    <div class="text-center max-w-2xl mx-auto mb-16">
-      <div class="text-brand-orange text-xs font-mono tracking-widest uppercase mb-2">// ARQUITETURA DO PRODUTO</div>
-      <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">O padrão que agências tradicionais não conseguem replicar.</h2>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      
-      <!-- Card 1 -->
-      <div class="glass-card p-8 rounded-2xl relative overflow-hidden">
-        <div class="w-12 h-12 rounded-xl bg-brand-orange/15 border border-brand-orange/40 text-brand-orange flex items-center justify-center font-mono font-bold text-lg mb-6 shadow-inner">
-          01
-        </div>
-        <h3 class="text-xl font-bold text-white mb-3">Modelagem 3D & WebGL Leve</h3>
-        <p class="text-sm text-brand-muted leading-relaxed font-sans mb-4">
-          Cenas e objetos tridimensionais que reagem ao mouse e ao toque do celular sem drenar a bateria e sem travamentos.
-        </p>
-        <ul class="text-xs font-mono text-zinc-400 space-y-2 border-t border-white/5 pt-4">
-          <li class="flex items-center gap-2"><span class="text-brand-orange">▸</span> Shaders otimizados para GPU</li>
-          <li class="flex items-center gap-2"><span class="text-brand-orange">▸</span> Renderização nativa a 60 FPS</li>
-        </ul>
-      </div>
-
-      <!-- Card 2 -->
-      <div class="glass-card p-8 rounded-2xl relative overflow-hidden border-brand-orange/30 bg-gradient-to-b from-brand-orange/[0.04] to-transparent">
-        <div class="w-12 h-12 rounded-xl bg-brand-orange text-black flex items-center justify-center font-mono font-bold text-lg mb-6 shadow-lg shadow-brand-orange/30">
-          02
-        </div>
-        <h3 class="text-xl font-bold text-white mb-3">Blindagem GEO Nativa</h3>
-        <p class="text-sm text-brand-muted leading-relaxed font-sans mb-4">
-          Seu site não compete apenas no Google. Ele já nasce estruturado para o ChatGPT, Perplexity e Gemini citarem sua empresa como recomendação.
-        </p>
-        <ul class="text-xs font-mono text-zinc-400 space-y-2 border-t border-white/5 pt-4">
-          <li class="flex items-center gap-2"><span class="text-brand-orange">▸</span> Arquivos llms.txt e /ai/summary</li>
-          <li class="flex items-center gap-2"><span class="text-brand-orange">▸</span> Schemas JSON-LD completos</li>
-        </ul>
-      </div>
-
-      <!-- Card 3 -->
-      <div class="glass-card p-8 rounded-2xl relative overflow-hidden">
-        <div class="w-12 h-12 rounded-xl bg-brand-cyan/15 border border-brand-cyan/40 text-brand-cyan flex items-center justify-center font-mono font-bold text-lg mb-6 shadow-inner">
-          03
-        </div>
-        <h3 class="text-xl font-bold text-white mb-3">Engenharia Sob Medida</h3>
-        <p class="text-sm text-brand-muted leading-relaxed font-sans mb-4">
-          Sem plugins pesados, sem templates vazados. Código limpo em Next.js / Tailwind hospedado em infraestrutura de nuvem moderna.
-        </p>
-        <ul class="text-xs font-mono text-zinc-400 space-y-2 border-t border-white/5 pt-4">
-          <li class="flex items-center gap-2"><span class="text-brand-cyan">▸</span> Score 98+ no Google PageSpeed</li>
-          <li class="flex items-center gap-2"><span class="text-brand-cyan">▸</span> PWA instalável no iPhone e Android</li>
-        </ul>
-      </div>
-
-    </div>
-  </section>
-
-  <!-- =========================================================================
-       5. CTA FINAL & CONTATO
-       ========================================================================= -->
-  <section id="contato" class="py-24 px-6 max-w-4xl mx-auto text-center">
-    <div class="glass-card p-10 sm:p-16 rounded-3xl relative overflow-hidden border border-brand-orange/40 shadow-2xl">
-      
-      <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-orange via-amber-400 to-brand-cyan"></div>
-
-      <div class="font-mono text-xs text-brand-orange font-bold uppercase tracking-widest mb-3">
-        DISPONIBILIDADE: 2 PROJETOS NESTE CICLO
-      </div>
-
-      <h2 class="text-3xl sm:text-5xl font-bold text-white tracking-tight mb-6">
-        Pronto para posicionar sua marca no topo?
-      </h2>
-
-      <p class="text-base text-brand-muted max-w-lg mx-auto mb-8 font-normal leading-relaxed">
-        Construímos sua landing page em 3D de alta performance entregue em 15 dias com garantia técnica e blindagem de IA inclusa.
-      </p>
-
-      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a href="https://wa.me/5551989871325" target="_blank" class="w-full sm:w-auto px-8 py-4 bg-brand-orange hover:bg-orange-500 active:scale-95 text-black font-bold text-sm rounded-xl shadow-xl shadow-brand-orange/30 transition-all flex items-center justify-center gap-2 cursor-pointer">
-          <span>Solicitar Proposta Comercial</span>
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.96.523 1.905.817 2.801.817 3.181 0 5.768-2.586 5.768-5.766.001-3.18-2.586-5.767-5.773-5.767zm0 10.372c-.815 0-1.611-.22-2.311-.64l-.165-.098-1.579.414.421-1.539-.107-.171c-.461-.734-.705-1.587-.704-2.458.001-2.484 2.022-4.505 4.507-4.505 2.484 0 4.505 2.021 4.505 4.505 0 2.485-2.021 4.507-4.507 4.507z"/>
-          </svg>
+        <a href="#comprar" class="px-4 py-1.5 bg-white text-black hover:bg-zinc-200 active:scale-95 text-xs font-semibold rounded-full transition-all cursor-pointer">
+          Comprar
         </a>
       </div>
+    </div>
+  </header>
 
-      <div class="mt-8 text-xs font-mono text-zinc-500">
-        Desenvolvido por Rian Fernandes · Software & Inteligência Artificial
+  <!-- Canvas WebGL 3D Fixo -->
+  <div id="canvas-container"></div>
+
+  <!-- =========================================================================
+       NARRATIVA POR DOBRAS (CONTROLADA PELO SCROLL)
+       ========================================================================= -->
+
+  <!-- DOBRA 1: HERO (0% - 25%) -->
+  <section class="story-section max-w-5xl mx-auto text-center items-center">
+    <div class="story-card max-w-2xl mx-auto pt-20">
+      <div class="inline-block px-3 py-1 rounded-full bg-brand-orange/15 border border-brand-orange/30 text-brand-orange font-mono text-xs font-semibold tracking-wider mb-5">
+        ● NEURAL HARDWARE ARCHITECTURE
       </div>
-
+      <h1 class="text-4xl sm:text-7xl font-bold tracking-tight text-white leading-[1.08] mb-5">
+        Poder absoluto.<br>
+        <span class="apple-gradient-text">Em cada átomo.</span>
+      </h1>
+      <p class="text-sm sm:text-lg text-brand-muted max-w-lg mx-auto font-normal leading-relaxed mb-6">
+        Projetado para executar modelos de IA com latência zero e 100% de privacidade local.
+      </p>
+      <div class="inline-flex items-center gap-2 font-mono text-xs text-zinc-400 bg-white/5 border border-white/10 px-4 py-2 rounded-full backdrop-blur">
+        <span>Role para desconstruir o dispositivo</span>
+        <span class="text-brand-orange animate-bounce">↓</span>
+      </div>
     </div>
   </section>
 
-  <!-- FOOTER -->
-  <footer class="border-t border-white/5 py-8 text-center text-xs font-mono text-zinc-500">
-    © 2026 Nexus 3D · Operação sob CNPJ Próprio · rian@rianfernandes.com.br
-  </footer>
+  <!-- DOBRA 2: CHASSI UNIBODY (Card na Esquerda, 3D na Direita) -->
+  <section class="story-section max-w-6xl mx-auto items-start justify-center sm:justify-center">
+    <div class="story-card glass-panel w-full max-w-sm sm:max-w-md p-6 sm:p-8 rounded-3xl text-left mt-auto sm:mt-0 mb-8 sm:mb-0">
+      <div class="inline-block px-2.5 py-0.5 rounded bg-brand-orange/20 text-brand-orange font-mono text-[11px] font-bold tracking-wider mb-3">
+        01 · CHASSI UNIBODY
+      </div>
+      <h2 class="text-2xl sm:text-4xl font-bold text-white tracking-tight mb-3 leading-snug">
+        Titânio Grau 5.<br>
+        <span class="text-zinc-400">Forjado no vácuo.</span>
+      </h2>
+      <p class="text-xs sm:text-sm text-zinc-300 leading-relaxed mb-5 font-normal">
+        O mesmo material aeroespacial de satélites orbitais. Proporciona a mais alta relação resistência-peso e dissipa calor passivamente.
+      </p>
+      <div class="grid grid-cols-2 gap-3 pt-3 border-t border-white/10 font-mono">
+        <div>
+          <div class="text-[10px] text-zinc-400 uppercase">Espessura</div>
+          <div class="text-lg font-bold text-white">0.78 mm</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-zinc-400 uppercase">Resistência</div>
+          <div class="text-lg font-bold text-brand-orange">+320%</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DOBRA 3: VISÃO EXPLODIDA (Card na Direita, 3D Explodido na Esquerda) -->
+  <section class="story-section max-w-6xl mx-auto items-end justify-center sm:justify-center">
+    <div class="story-card glass-panel w-full max-w-sm sm:max-w-md p-6 sm:p-8 rounded-3xl text-left mt-auto sm:mt-0 mb-8 sm:mb-0">
+      <div class="inline-block px-2.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 font-mono text-[11px] font-bold tracking-wider mb-3">
+        02 · DESCONSTRUÇÃO
+      </div>
+      <h2 class="text-2xl sm:text-4xl font-bold text-white tracking-tight mb-3 leading-snug">
+        Cinco camadas.<br>
+        <span class="text-zinc-400">Zero atrito térmico.</span>
+      </h2>
+      <p class="text-xs sm:text-sm text-zinc-300 leading-relaxed mb-4 font-normal">
+        As camadas se separam em suspensão magnética para máxima dissipação de calor:
+      </p>
+      <ul class="space-y-2 font-mono text-[11px] text-zinc-300 border-t border-white/10 pt-3">
+        <li class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+          <span>01. Escudo de Cristal Safira</span>
+        </li>
+        <li class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-brand-orange"></span>
+          <span>02. Matriz Neural 120B com Núcleo IA</span>
+        </li>
+        <li class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-zinc-300"></span>
+          <span>03. Chassi Estrutural em Titânio</span>
+        </li>
+        <li class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+          <span>04. Câmara de Cobre Criogênica</span>
+        </li>
+        <li class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-zinc-500"></span>
+          <span>05. Base Cerâmica em Obsidiana</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- DOBRA 4: RECOMPOSIÇÃO & CTA -->
+  <section id="comprar" class="story-section max-w-4xl mx-auto text-center items-center pb-24">
+    <div class="story-card glass-panel w-full max-w-md sm:max-w-xl mx-auto p-8 sm:p-12 rounded-3xl border border-brand-orange/40 shadow-2xl">
+      <div class="w-12 h-12 rounded-2xl bg-brand-orange/20 text-brand-orange border border-brand-orange/40 flex items-center justify-center mx-auto mb-5 shadow-[0_0_20px_rgba(255,106,0,0.3)]">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <h2 class="text-3xl sm:text-5xl font-bold text-white tracking-tight mb-3">
+        Pronto para o salto.
+      </h2>
+      <p class="text-xs sm:text-sm text-brand-muted mb-6 leading-relaxed max-w-sm mx-auto">
+        O padrão de design que retém seu cliente e posiciona sua marca como líder incontestável.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <a href="#comprar" class="w-full sm:w-auto px-8 py-3.5 bg-brand-orange hover:bg-orange-500 text-black font-bold text-sm rounded-full shadow-lg shadow-brand-orange/25 active:scale-95 transition-all cursor-pointer">
+          Solicitar Orçamento
+        </a>
+        <button onclick="window.scrollTo({top: 0, behavior: 'instant'})" class="w-full sm:w-auto px-6 py-3.5 bg-white/10 hover:bg-white/15 text-white font-mono text-xs rounded-full border border-white/10 transition-all cursor-pointer">
+          ↺ Rolar ao Início
+        </button>
+      </div>
+    </div>
+  </section>
 
   <!-- =========================================================================
-       MOTOR THREE.JS INTERATIVO (3D CANVAS NATIVO)
+       MOTOR DE SCROLLYTELLING 3D (THREE.JS CINEMATOGRÁFICO & ADAPTATIVO MOBILE)
        ========================================================================= -->
   <script>
     (() => {
-      const container = document.getElementById('canvas3d-container');
-      if (!container) return;
+      "use strict";
 
-      const width = container.clientWidth;
-      const height = container.clientHeight;
+      const container = document.getElementById('canvas-container');
+      const progressBar = document.getElementById('scroll-progress');
 
-      // 1. Scene, Camera, Renderer
+      // 1. Cena, Câmera e Renderizador
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-      camera.position.z = 6;
+      const isMobile = window.innerWidth < 768;
+      
+      const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 0, isMobile ? 10.5 : 8.5);
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(width, height);
+      renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       container.appendChild(renderer.domElement);
 
-      // 2. Luzes de Estúdio Refinadas (Alto Contraste & Rim Light)
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      // 2. Luzes de Estúdio de Luxo
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
       scene.add(ambientLight);
 
-      const orangeLight = new THREE.PointLight(0xff6a00, 5, 25);
-      orangeLight.position.set(4, 4, 4);
-      scene.add(orangeLight);
+      const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
+      keyLight.position.set(5, 7, 6);
+      scene.add(keyLight);
 
-      const cyanLight = new THREE.PointLight(0x00f0ff, 4, 25);
-      cyanLight.position.set(-4, -3, 3);
-      scene.add(cyanLight);
+      const fillLight = new THREE.DirectionalLight(0x00f0ff, 2.2);
+      fillLight.position.set(-6, -4, 4);
+      scene.add(fillLight);
 
-      // Rim light traseiro para realçar quinas e volume do 3D
-      const rimLight = new THREE.DirectionalLight(0xffaa44, 2.5);
-      rimLight.position.set(0, 5, -3);
-      scene.add(rimLight);
+      const orangeRim = new THREE.DirectionalLight(0xff6a00, 4.5);
+      orangeRim.position.set(0, 6, -5);
+      scene.add(orangeRim);
 
-      // 3. Objeto 3D Central: Icosaedro Futurista com Gaiola Wireframe
-      const group = new THREE.Group();
+      // 3. Montagem das 5 Camadas (A Visão Explodida)
+      const masterGroup = new THREE.Group();
 
-      // Núcleo Sólido Facetado com Material Nobre (Obsidiana / Cristal Titânio)
-      const coreGeo = new THREE.IcosahedronGeometry(1.6, 0);
-      const coreMat = new THREE.MeshPhysicalMaterial({
-        color: 0x222634,
-        emissive: 0x2a1405,
-        emissiveIntensity: 0.8,
-        roughness: 0.12,
-        metalness: 0.88,
-        clearcoat: 1.0,
-        clearcoatRoughness: 0.08,
-        reflectivity: 0.9,
-        flatShading: true
-      });
-      const coreMesh = new THREE.Mesh(coreGeo, coreMat);
-      group.add(coreMesh);
+      const cardW = 3.2, cardH = 2.1, cardR = 0.25;
 
-      // Gaiola Wireframe Externa Neon Vibrante
-      const wireGeo = new THREE.IcosahedronGeometry(1.72, 1);
-      const wireMat = new THREE.MeshBasicMaterial({
-        color: 0xff7b1a,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.55
-      });
-      const wireMesh = new THREE.Mesh(wireGeo, wireMat);
-      group.add(wireMesh);
+      function createPlateGeo(w, h, depth, radius) {
+        const shape = new THREE.Shape();
+        const x = -w/2, y = -h/2;
+        shape.moveTo(x + radius, y);
+        shape.lineTo(x + w - radius, y);
+        shape.quadraticCurveTo(x + w, y, x + w, y + radius);
+        shape.lineTo(x + w, y + h - radius);
+        shape.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+        shape.lineTo(x + radius, y + h);
+        shape.quadraticCurveTo(x, y + h, x, y + h - radius);
+        shape.lineTo(x, y + radius);
+        shape.quadraticCurveTo(x, y, x + radius, y);
 
-      // Aneis Orbitais de Dados
-      const ringGeo = new THREE.TorusGeometry(2.3, 0.02, 16, 100);
-      const ringMat = new THREE.MeshBasicMaterial({
-        color: 0x00f0ff,
-        transparent: true,
-        opacity: 0.6
-      });
-      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-      ringMesh.rotation.x = Math.PI / 3;
-      ringMesh.rotation.y = Math.PI / 6;
-      group.add(ringMesh);
-
-      // Partículas em Órbita
-      const particleGeo = new THREE.BufferGeometry();
-      const count = 180;
-      const positions = new Float32Array(count * 3);
-      for (let i = 0; i < count * 3; i += 3) {
-        const radius = 2.4 + Math.random() * 1.5;
-        const theta = Math.random() * Math.PI * 2;
-        const phi = (Math.random() - 0.5) * Math.PI;
-        positions[i] = radius * Math.cos(theta) * Math.cos(phi);
-        positions[i + 1] = radius * Math.sin(phi);
-        positions[i + 2] = radius * Math.sin(theta) * Math.cos(phi);
+        const geo = new THREE.ExtrudeGeometry(shape, {
+          depth: depth,
+          bevelEnabled: true,
+          bevelSegments: 4,
+          steps: 1,
+          bevelSize: 0.03,
+          bevelThickness: 0.03
+        });
+        geo.center();
+        return geo;
       }
-      particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      const particleMat = new THREE.PointsMaterial({
-        color: 0xffaa00,
-        size: 0.04,
-        transparent: true,
-        opacity: 0.7
-      });
-      const particles = new THREE.Points(particleGeo, particleMat);
-      group.add(particles);
 
-      scene.add(group);
+      // CAMADA 1 (Topo): Vidro Safira Translúcido
+      const layer1_Glass = new THREE.Mesh(
+        createPlateGeo(cardW, cardH, 0.04, cardR),
+        new THREE.MeshPhysicalMaterial({
+          color: 0x99ddff,
+          metalness: 0.1,
+          roughness: 0.05,
+          transmission: 0.8,
+          transparent: true,
+          opacity: 0.7,
+          clearcoat: 1.0
+        })
+      );
+      masterGroup.add(layer1_Glass);
 
-      // 4. Interatividade: Rastreamento do Mouse e Toque no Mobile
-      let mouseX = 0, mouseY = 0;
-      let targetX = 0, targetY = 0;
-      let isDragging = false;
-      let prevPointerX = 0, prevPointerY = 0;
+      // CAMADA 2: Placa de Silício com Matriz Neural Brilhante
+      const layer2_Silicon = new THREE.Mesh(
+        createPlateGeo(cardW * 0.94, cardH * 0.94, 0.05, cardR * 0.8),
+        new THREE.MeshStandardMaterial({
+          color: 0x161822,
+          metalness: 0.85,
+          roughness: 0.25
+        })
+      );
+      // Chip de IA Central Neon Laranja
+      const chipMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(0.95, 0.95, 0.08),
+        new THREE.MeshStandardMaterial({
+          color: 0x0a0a0a,
+          emissive: 0xff6a00,
+          emissiveIntensity: 1.0,
+          metalness: 0.95,
+          roughness: 0.1
+        })
+      );
+      chipMesh.position.z = 0.04;
+      layer2_Silicon.add(chipMesh);
+      masterGroup.add(layer2_Silicon);
 
-      const onPointerMove = (e) => {
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      // CAMADA 3 (Centro): Chassi Unibody de Titânio Cinza Escovado
+      const layer3_Chassis = new THREE.Mesh(
+        createPlateGeo(cardW * 1.02, cardH * 1.02, 0.12, cardR),
+        new THREE.MeshStandardMaterial({
+          color: 0x6e7382,
+          metalness: 0.95,
+          roughness: 0.15
+        })
+      );
+      masterGroup.add(layer3_Chassis);
 
-        if (isDragging) {
-          const deltaX = clientX - prevPointerX;
-          const deltaY = clientY - prevPointerY;
-          group.rotation.y += deltaX * 0.008;
-          group.rotation.x += deltaY * 0.008;
-          prevPointerX = clientX;
-          prevPointerY = clientY;
-        } else {
-          const rect = container.getBoundingClientRect();
-          mouseX = ((clientX - rect.left) / rect.width) * 2 - 1;
-          mouseY = -(((clientY - rect.top) / rect.height) * 2 - 1);
+      // CAMADA 4: Radiador de Cobre / Câmara de Vapor
+      const layer4_Cooler = new THREE.Mesh(
+        createPlateGeo(cardW * 0.9, cardH * 0.9, 0.05, cardR * 0.8),
+        new THREE.MeshStandardMaterial({
+          color: 0xd97736,
+          metalness: 0.92,
+          roughness: 0.22
+        })
+      );
+      masterGroup.add(layer4_Cooler);
+
+      // CAMADA 5 (Base): Cerâmica Obsidiana
+      const layer5_Base = new THREE.Mesh(
+        createPlateGeo(cardW, cardH, 0.06, cardR),
+        new THREE.MeshPhysicalMaterial({
+          color: 0x111215,
+          roughness: 0.1,
+          metalness: 0.9,
+          clearcoat: 0.8
+        })
+      );
+      masterGroup.add(layer5_Base);
+
+      scene.add(masterGroup);
+
+      // 4. Mecânica de Scroll & Responsividade
+      let targetProgress = 0;
+      let currentProgress = 0;
+
+      function onScroll() {
+        const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+        targetProgress = Math.max(0, Math.min(1, window.scrollY / (totalHeight || 1)));
+        if (progressBar) {
+          progressBar.style.width = (targetProgress * 100) + '%';
         }
-      };
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
 
-      const onPointerDown = (e) => {
-        isDragging = true;
-        prevPointerX = e.touches ? e.touches[0].clientX : e.clientX;
-        prevPointerY = e.touches ? e.touches[0].clientY : e.clientY;
-      };
-
-      const onPointerUp = () => { isDragging = false; };
-
-      container.addEventListener('mousemove', onPointerMove);
-      container.addEventListener('mousedown', onPointerDown);
-      window.addEventListener('mouseup', onPointerUp);
-
-      container.addEventListener('touchmove', onPointerMove, { passive: true });
-      container.addEventListener('touchstart', onPointerDown, { passive: true });
-      window.addEventListener('touchend', onPointerUp);
-
-      // Redimensionamento responsivo
       window.addEventListener('resize', () => {
-        if (!container) return;
-        const w = container.clientWidth;
-        const h = container.clientHeight;
-        camera.aspect = w / h;
+        const mobileNow = window.innerWidth < 768;
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.position.z = mobileNow ? 10.5 : 8.5;
         camera.updateProjectionMatrix();
-        renderer.setSize(w, h);
+        renderer.setSize(window.innerWidth, window.innerHeight);
       });
 
-      // 5. Loop de Animação 60 FPS
-      let clock = new THREE.Clock();
-      const animate = () => {
+      // 5. Loop de Animação 60 FPS com Interpolação de Alta Resolução
+      const clock = new THREE.Clock();
+
+      function animate() {
         requestAnimationFrame(animate);
         const delta = clock.getDelta();
 
-        if (!isDragging) {
-          // Rotação suave contínua
-          group.rotation.y += 0.25 * delta;
-          group.rotation.x += 0.12 * delta;
-          ringMesh.rotation.z += 0.4 * delta;
-          particles.rotation.y -= 0.15 * delta;
+        // Inércia fluida
+        currentProgress += (targetProgress - currentProgress) * 0.12;
+        const p = currentProgress;
 
-          // Parallax reativo ao mouse suave
-          targetX = mouseX * 0.4;
-          targetY = mouseY * 0.4;
-          group.position.x += (targetX - group.position.x) * 0.05;
-          group.position.y += (targetY - group.position.y) * 0.05;
+        const mobile = window.innerWidth < 768;
+        
+        let rotX = 0, rotY = 0, rotZ = 0;
+        let posX = 0, posY = 0;
+        let explodeDist = 0;
+
+        if (p < 0.25) {
+          // DOBRA 1: Visão Frontal Imponente
+          const t = p / 0.25;
+          rotY = t * 0.45;
+          rotX = t * 0.2;
+          posX = 0;
+          posY = mobile ? 0.35 : 0;
+          explodeDist = 0;
+        } else if (p < 0.50) {
+          // DOBRA 2: Titânio Profile (No Desktop vai pra DIREITA; no Mobile vai pro TOPO)
+          const t = (p - 0.25) / 0.25;
+          rotY = 0.45 + t * 1.1; // Gira mostrando o perfil
+          rotX = 0.2 - t * 0.1;
+          posX = mobile ? 0 : (1.6 * t);
+          posY = mobile ? (0.35 + 0.55 * t) : 0;
+          explodeDist = 0;
+        } else if (p < 0.75) {
+          // DOBRA 3: VISÃO EXPLODIDA (No Desktop vai pra ESQUERDA; no Mobile fica no TOPO)
+          const t = (p - 0.50) / 0.25;
+          // Ângulo isométrico cinematográfico onde as camadas se separam perfeitamente visíveis
+          rotY = 1.55 - t * 0.85; 
+          rotX = 0.1 + t * 0.5;
+          rotZ = t * 0.15;
+          posX = mobile ? 0 : (1.6 - t * 3.4); // Desloca para a esquerda no desktop (-1.8)
+          posY = mobile ? 0.9 : 0; // Fica no topo da tela do iPhone sem colidir com o card
+          explodeDist = t * 1.8; // As 5 camadas se separam no ar!
+        } else {
+          // DOBRA 4: Recomposição e Centro
+          const t = (p - 0.75) / 0.25;
+          rotY = 0.7 + t * 0.7;
+          rotX = 0.6 - t * 0.35;
+          rotZ = 0.15 * (1 - t);
+          posX = mobile ? 0 : (-1.8 * (1 - t));
+          posY = mobile ? (0.9 * (1 - t)) : 0;
+          explodeDist = (1 - t) * 1.8; // Encaixa de volta
         }
 
+        // Aplica transformações
+        masterGroup.rotation.y = rotY;
+        masterGroup.rotation.x = rotX;
+        masterGroup.rotation.z = rotZ + Math.sin(clock.getElapsedTime() * 0.8) * 0.02;
+        masterGroup.position.x = posX;
+        masterGroup.position.y = posY;
+
+        // Deslocamento das 5 camadas no espaço (Visão Explodida)
+        layer1_Glass.position.z = explodeDist * 1.5;
+        layer2_Silicon.position.z = explodeDist * 0.75;
+        layer3_Chassis.position.z = 0;
+        layer4_Cooler.position.z = -explodeDist * 0.75;
+        layer5_Base.position.z = -explodeDist * 1.5;
+
+        // Pulso do chip neural
+        chipMesh.material.emissiveIntensity = 0.7 + Math.sin(clock.getElapsedTime() * 3) * 0.3;
+
         renderer.render(scene, camera);
-      };
+      }
 
       animate();
     })();
